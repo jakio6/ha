@@ -1,4 +1,4 @@
-#clearning 
-##bit by bit
-##learn git and vim also
-##and learn english>.<
+# clearning 
+## bit by bit
+## learn git and vim also
+## and learn english>.<
