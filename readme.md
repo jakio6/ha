@@ -19,3 +19,6 @@
 * info show info
 ### git 
 * git push -f forced push
+### makefile
+#### seemed to be a powerful tool
+*
