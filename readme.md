@@ -7,4 +7,5 @@
 ### gdb 
 * gcc -g make it able to debug
 * gcc -o output as certain filename
-
+### git 
+* git push -f forced push
