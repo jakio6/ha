@@ -12,8 +12,10 @@
 * b	set breakpoint
 * r	run
 * p	show value of variable
-* n	next
-* s	next
+* n	step next
+* s	step in
 * c	to next breakpoint
+* watch set watchpoint
+* info show info
 ### git 
 * git push -f forced push
