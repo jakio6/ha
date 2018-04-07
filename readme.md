@@ -21,13 +21,14 @@
 * git push -f forced push
 ### makefile
 #### seemed to be a powerful tool
-' t: s1 s1 s1 ..	t:object u want s123..things needed to generate t	 command :how to
-<tab>command	
+'
+>t: s1 s1 s1 ..	t:object u want s123..things needed to generate t	 command :how to
+><tab>command	
 s1:.. ..
-<tab>command
+><tab>command
 s2:.. ..
-<tab>command
-.PHONY		do the follows unconditionally	
-clean:.. ..
-<tab>command
+><tab>command
+>.PHONY		do the follows unconditionally	
+>clean:.. ..
+><tab>command
 '
