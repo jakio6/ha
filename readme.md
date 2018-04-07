@@ -40,3 +40,11 @@ or
 B:=C
 A:=C
 ```
+* -C dir	 find makefiles from certain dir
+* -f file	 use file as makefile?
+* -i		 ignore faults generated while make
+* -I		 include
+* -n		 print but not execute
+* -s 		 Do not show commands
+* -w		 if path changed ,show Current path
+* -p		 show what ..
