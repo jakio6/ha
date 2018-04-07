@@ -22,8 +22,9 @@
 ### makefile
 #### seemed to be a powerful tool
 ``` makefile
-t: s1 s1 s1 ..	t:object u want s123..things needed to generate t	 command :how to
-<tab>command	
+OBJS= s1 s2	variable
+t: $(OBJS) s3 ..	t:object u want s123..things needed to generate t	 command :how to
+<tab>command	use $@ here for t and other $..
 s1:.. ..
 <tab>command
 s2:.. ..
@@ -31,4 +32,11 @@ s2:.. ..
 .PHONY		do the follows unconditionally	
 clean:.. ..
 <tab>command
+```
+```
+A=$(B)
+B=$(C)
+or 
+B:=C
+A:=C
 ```
