@@ -48,3 +48,4 @@ A:=C
 * -s 		 Do not show commands
 * -w		 if path changed ,show Current path
 * -p		 show what ..
+### 。。。。。。。。。。。。。。。。。。。。。。。
