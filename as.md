@@ -120,3 +120,16 @@ ___
 - 这个地址引用是不是与程序指针关联?
 >英语很重要啊,这个reference to an address搞得我晕呼呼的(**其实看什么都晕呼呼的**)
 
+事实上,所有的地址都是以section+offset into section的形式给出的.  
+进一步说,**as**生成的大多数表述都是这种section-relative类型的.
+在这本手册里(as),用notation(记号)`{secname N}` 来表示`offset N into section secname`  
+>别看漏了,不然会看不下去的:sweat:
+
+除了`text,data,bss`这三个sections你还需要了解`absolute(独立,绝对) section` 在ld整合以分开的代码的时候,**absolute section中的地址不会被改动**,比如:  
+地址{absolute 0}会被ld重定位到运行地址0,虽然链接器从不在链接之后安排具有重叠地址的两个部分程序的数据段，但根据定义，它们的绝对部分必须重叠.当程序以地址{绝对239 }在程序的任何其他部分运行时，程序的某部分部分中的地址{绝对239 }总是相同的地址。
+>Although the linker never arranges two partial programs’ data sections with overlapping addresses after linking, by definition their absolute sections must overlap. Address {absolute 239} in one part of a program is always the same address when the program is running as address {absolute 239} in any other part of the program.
+
+section的理念拓展到了undefined section.任何在汇编时时section未知的地址by definition会被定义成{undefined U} U在之后会被填充,由于numbers总是已定义的,,生成undefined address的唯一当法是mention(提及,声明)一个未定义的symbol,对命名的通用块的引用就是这样一个symbol:它的值在汇编时是未知的因此他是section undefined的  
+在linked的程序中section指的是一组section,ld把所有部分代码的text sections放在linked程序中连续的地址区域,**当谈到一个程序的text section的时候,一般是指所有部分代码中text section的地址,data和bss section也是如此**  
+有些section是由ld处理的,其他的是as使用的,只在汇编起作用  
+___
