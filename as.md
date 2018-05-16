@@ -133,3 +133,69 @@ section的理念拓展到了undefined section.任何在汇编时时section未知
 在linked的程序中section指的是一组section,ld把所有部分代码的text sections放在linked程序中连续的地址区域,**当谈到一个程序的text section的时候,一般是指所有部分代码中text section的地址,data和bss section也是如此**  
 有些section是由ld处理的,其他的是as使用的,只在汇编起作用  
 ___
+马的什么玩意啊,看不下去了
+___
+### linker sections  
+ 
+ section|...	  
+ -|
+ named text data|as与ld把他们看作分离但是同等的section.程序运行时,通常text section应该是不会改动的,text section通常是进程间共享的,它包含了指令和常量之类的.而data section在程序运行时通常是可更改的:比如C 语言的变量就会被存在data section.
+ bss|在程序运行时,这个里头包含了置零的字节,用来存放存放未初始化的变量或者是common storage.每个程序bss section的长度是很重要的,但是由于它创建时就全部置零了,就没有必要再在目标文件中指定0填充字节了.bss section就是为了从目标文件中explicit(精简?)这些显式指定的0
+ absolute|这个section的地址0总是被分配到运行时地址0,这在需要指定不被ld重分配的地址时很有用.从这个意义来,我们称absolute section是"unrelocatable"的:它们在重定位的时候不会改变
+ undefined |这个section是对在前面的section中未出现的对象的地址引用的一个"catch-all"(缓存区?)
+大概这么个意思:  
+```
+partial program # 1:  |ttttt|dddd|00|
+                      +-----+----+--+
+
+                      text   data bss
+                      seg.   seg. seg.
+
+                      +---+---+---+
+partial program # 2:  |TTT|DDD|000|
+                      +---+---+---+
+
+                      +--+---+-----+--+----+---+-----+~~
+linked program:       |  |TTT|ttttt|  |dddd|DDD|00000|
+                      +--+---+-----+--+----+---+-----+~~
+
+    addresses:        0 …
+ ```
+### Assembler internal sections
+这些section在as内部使用,他们在运行时并没有意义,大多数情况下你并不需要去管这些section,但是在as的警告中可能会出现它们,所以大概了解一下他们对as的意义是很有用的,这些section用来使你程序中所有的expression 的地址可以是section relatived  
+#### ASSEMBLER-INTERNAL-LOGIC-ERROR!
+发现了assembler内部逻辑错误,这意味着assembler出现了bug  
+#### expr section
+assembler内部把复杂的expression以combinations of symbols表示,当需要用一个符号表示一条expression的时候,it puts it in the expr secion  
+### sub-sections 
+ok 到此为止 
+____
+# the end
+接着来 
+### sub-section
+assembled bytes 通常会分到两个section:text和data.在named section中可能有一些数据是你最想向要在目标文件中将他们分配为contiguous的,即使他们在汇编汇编源代码中并非连续,as允许你用sub-section来实现这个目的,在每个section中,可以有标号0-8192的sub-section, `Objects assembled into the same subsection go into the object file together with other objects in the same subsection. (为什么中文输入法突然有些word输入buliaole cao) For example, a compiler might want to store constants in the text section, but might not want to have them interspersed with the program being assembled. In this case, the compiler could issue a ‘.text 0’ before each section of code being output, and a ‘.text 1’ before each group of constants being output. 
+`  
+`Subsections are optional. If you do not use subsections, everything goes in subsection number zero.`
+`Each subsection is zero-padded up to a multiple of four bytes.(Subsections may be padded a different amount on different flavors of as.) `
+* Subsections appear in your object file in numeric order, lowest numbered to highest.
+* The object file contains no representation of subsections; ld and other programs that manipulate object files see no trace of them.They just see all your text subsections as a text section, and all your data subsections as a data section.
+* To specify which subsection you want subsequent statements assembled into, use a numeric argument to specify it, in a ‘.text expression’ or a ‘.data expression’ statement.
+# An expression specifies an address or numeric value. Whitespace may precede and/or follow an expression. 
+>补充ha expression的意思,前面全mixed le
+
+* If you just say ‘.text’ then ‘.text 0’ is assumed. Likewise ‘.data’ means ‘.data 0’. Assembly begins in text 0. 
+ For instance:
+ ```
+ .text 0     # The default subsection is text 0 anyway.
+.ascii "This lives in the first text subsection. *"
+.text 1
+.ascii "But this lives in the second text subsection."
+.data 0
+.ascii "This lives in the data section,"
+.ascii "in the first data subsection."
+.text 0
+.ascii "This lives in the first text section,"
+.ascii "immediately following the asterisk (*)."
+```
+#### .algin
+Each section has a location counter incremented by one for every byte assembled into that section. Because subsections are merely a convenience restricted to as there is no concept of a subsection location counter. There is no way to directly manipulate a location counter—but the .align directive changes it, and any label definition captures its current value. The location counter of the section where statements are being assembled is said to be the active location counter. 
