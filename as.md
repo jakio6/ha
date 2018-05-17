@@ -185,7 +185,8 @@ assembled bytes 通常会分到两个section:text和data.在named section中可�
 
 * If you just say ‘.text’ then ‘.text 0’ is assumed. Likewise ‘.data’ means ‘.data 0’. Assembly begins in text 0. 
  For instance:
- ```
+ 
+```
  .text 0     # The default subsection is text 0 anyway.
 .ascii "This lives in the first text subsection. *"
 .text 1
@@ -197,5 +198,12 @@ assembled bytes 通常会分到两个section:text和data.在named section中可�
 .ascii "This lives in the first text section,"
 .ascii "immediately following the asterisk (*)."
 ```
+
 #### .algin
 Each section has a location counter incremented by one for every byte assembled into that section. Because subsections are merely a convenience restricted to as there is no concept of a subsection location counter. There is no way to directly manipulate a location counter—but the .align directive changes it, and any label definition captures its current value. The location counter of the section where statements are being assembled is said to be the active location counter. 
+### bss section
+用来存储局部公共变量,你可以在这里分配存储空间但不必初始化,程序运行时这里会被初始化为0
+- **.lcomm**
+- **.comm**
+当生成支持多个section的目标文件,比如ELF和COFF时,你可以转到.bss section,正常的定义标志符, You may only assemble zero values into the section. Typically the section will only contain symbol definitions and .skip directives (see .skip). 
+># pseudo-op 伪指令  
