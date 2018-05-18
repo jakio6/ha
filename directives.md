@@ -273,7 +273,8 @@ label:
 label:
         .cfi_restore_state
         /* Do something else */
-        ```
+```
+
 这样,label后指令的规则会与第一个`.cfi_restore`之前一样,而不用使用多个`.cfi`伪指令(是我眼瞎吗,明明下面这个比较多,还是他忘了删了,偷工减料)
 ### .cfi_return_column register
 change return column register,就是说返回地址不是直接在寄存器中就是可以通过register的规则得到????
