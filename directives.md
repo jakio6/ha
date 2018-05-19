@@ -292,3 +292,7 @@ SPARC register window has been saved.
 将一个寄存器等价为一个固定label的用处,is probably limited to the return address register.这里,它能标记一个只有一个返回地址代码段并且通过direct branch访问,内存和寄存器中不会存留任何返回值.
 > 玛格及累死了,看了半天完全看不明白的
 
+## .comm symbol , length
+`.comm`声明一个叫symbol的common symbol,在链接的时候,一个common symbol 可能会合其他目标文件中的同名的defined的或者common symbol合并,
+如果ld没有找到对这个symbol的定义-just one or more symbol-他就会给length长度的字节数未初始化内存,长度必须是非表达式,如果ld发现了多个同名的common symbol,而他们length又不一致,ld会分配这之中最大的一个.  
+在使用ELF或者(as a gun extension)PE时,`.comm`伪指令接收可选的第三个参数,这是这个symbol想要的对齐方式,以byte界限的形式为ELF指定(比如,16对齐表示地址最低四个有效位是0),以2的幂的形式为PE指定(比如5的对齐意味着32byte界限的对齐)alignment必须是非负表达式,并且必须是2的倍数(差不多这个意思),如果ld要为common symbol分配未初始化的内存,它会在安置symbol的时候使用这个对齐形式,如果没有指定对齐方式,as会将对齐方式设置为最大的小于或等于这个symbol size的2的平方数,,ELF上的最大值是16,PE的默认值是4(`这不同于ld的--section-alignment选项控制的可执行镜像(image)文件对齐方式,PE中镜像文件中的sections是以4096的整数倍对齐的,这与寻常变量的对齐方式相差甚远, (他同样是目标文件中的默认对齐方式,通常它不怎么严格对齐)It is rather the default alignment for (non-debug) sections within object (‘*.o’) files, which are less strictly aligned.`),在HPPA上的`.comm`的语法有点不同,格式是`symbol .comm,length`;symbol是可选的
