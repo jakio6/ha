@@ -296,3 +296,88 @@ SPARC register window has been saved.
 `.comm`声明一个叫symbol的common symbol,在链接的时候,一个common symbol 可能会合其他目标文件中的同名的defined的或者common symbol合并,
 如果ld没有找到对这个symbol的定义-just one or more symbol-他就会给length长度的字节数未初始化内存,长度必须是非表达式,如果ld发现了多个同名的common symbol,而他们length又不一致,ld会分配这之中最大的一个.  
 在使用ELF或者(as a gun extension)PE时,`.comm`伪指令接收可选的第三个参数,这是这个symbol想要的对齐方式,以byte界限的形式为ELF指定(比如,16对齐表示地址最低四个有效位是0),以2的幂的形式为PE指定(比如5的对齐意味着32byte界限的对齐)alignment必须是非负表达式,并且必须是2的倍数(差不多这个意思),如果ld要为common symbol分配未初始化的内存,它会在安置symbol的时候使用这个对齐形式,如果没有指定对齐方式,as会将对齐方式设置为最大的小于或等于这个symbol size的2的平方数,,ELF上的最大值是16,PE的默认值是4(`这不同于ld的--section-alignment选项控制的可执行镜像(image)文件对齐方式,PE中镜像文件中的sections是以4096的整数倍对齐的,这与寻常变量的对齐方式相差甚远, (他同样是目标文件中的默认对齐方式,通常它不怎么严格对齐)It is rather the default alignment for (non-debug) sections within object (‘*.o’) files, which are less strictly aligned.`),在HPPA上的`.comm`的语法有点不同,格式是`symbol .comm,length`;symbol是可选的
+ ## .data *subsection*
+ `.data`告诉as将接下来的statements装载进编号为*subsection*(非负数)的data subsection的末尾,如果*subsection*缺省,默认值是0.
+ ## .def *name*
+ 开始为symbol *name*定义调试信息,定义展开直到 遇到`.ended`伪指令.
+ ## .desc *symbol* , *abs-epxresstion*
+ 这条伪指令设置一个symbol的描述符设置为一个非负表达式值的低十六位.
+ 这个伪指令在as输出模式为COFF时不可用,它只对a.out或者b.out目标文件格式有效,在COFF输出格式时处于对兼容性的考虑,as会接受这条指令,但不会产生任何输出(针对这条个指令?)
+ ## .dim 
+ 这个伪指令是编译器生成的用来,用来在symbol表中包含额外的调试信息,它只允许出现在`.def` 与 `.endef`之间.
+ ## .double *flonums*
+ `.double`接收0到多个逗号隔的浮点数,它装配浮点数,具体产生的浮点数类型视as的配置而定.
+ 
+## .eject
+在生成assembly listings时强制在这里page break
+## .else
+`.else`是as支持的条件编译的一部分,见`.if`节,它标记了一个在`.if`条件不成立的情况下要被汇编的section的起点.
+>### 插播,昨天终于听到有人说了,at&t语风格汇编中的section就是intel风格中的segment
+
+
+## .elseif
+`.elseif`是as条件会变得的一部分...,他是在一个`.if`语句中用一个新的`.if`完全填充其`.else`section的简略形式.
+## .end
+`.end`标记了汇编文件的结尾.as在碰到`.end`伪指令后不会在处理此文件中的任何东西
+## .endef
+与`.def`配对来进行symbol definition
+## .endfunc
+`.endfunc`用来与`.func`配对做啥啥啥
+## .endif
+`.endif`是as支持的条件汇编的一部分,它标记了一只在特定条件下编译的块的结束
+## .equ *symbol* , *expresstion*
+这个伪指令将*symbol*的值设为*expresstion*,与`.set`是相同的,在HPPA上equ的语法是*symbol* `.equ`*expresstion*,在z80上的语法是symbol equ expresstion,在z80上如果*symbol*是已定义的话使用这个指令会出错
+,但是这个情况下这个symbol也是被可以重定义的,
+## .equiv *symbol* , *expresstion*
+`.equiv`与`.equ` `.set`相似,除了在*symbol*是已定义的的情况下汇编器会报错,注意被引用但未实际定义的symbol认为是未定义的.  
+除了错误信息的内容,这个指令大致与下面的形式等价:
+```
+.ifdef SYM
+.err
+.endif
+.equ SYM,VAL
+```
+加上它可以防止*symbol*再被重定义??(plus it protects the symbol from later redefinition. )
+## .eqv *symbol* ,*expresstion*
+`.eqv`伪指令与`.equiv`相似,但是它并不会去管expresstion的值是什么.之后每次这个*symbol*被用在表达式中的时候,它的当前值被被用来计算
+## .err
+如果as汇编到了一条`.err`伪指令,他会打印一条错误信息,并且,除非使用了`-Z`选型,否则将不会在生成目标文件,者可以用来示意条件编译代码中的一个错误.
+## .error "string"
+与`.err`相似,这条伪指令会产生一个错误,但是你可以指定要作为错误信息的字符串,如果你没有指定这条信息,他默认是".errot directive invoked in source file"
+`.error "this code has not been assembled and tested"`
+## .exitm
+提前从当前宏定义中退出. 见MACRO
+## .extern 
+`.extern`在源程序中被接受--为了与其他assembler(这东西到底几个意思>.<)的兼容性--但它会被忽略??as把所有未定义的symbol都看作是external的.
+## .fail *expresstion*
+生成一个错误或者警告,如果*expresstion*的值大于等于500,as会打印warning,如果值小于500,as会报错.这条信息会包含*expresstion*的值,这在高度条套宏或条件编译时很有用.
+## .file 
+有两种版本的`.file`伪指令.支持DWARF2 line number 信息的Target使用DWARF2版本的 `.file`,其他的使用默认的.
+### default version
+这个版本的`.file`伪指令告诉as我们准备要start以个新的逻辑文件,语法是:  
+`.file` *string*
+*string*是新文件的名字.通常,这个文件名不管带不带""都能被识别,但是如果你想制定文件名为空,就必须要"". This statement may go away in future: it is only recognized to be compatible with old as programs.
+### DWRF2 Version
+When emitting DWARF2 line number information,`.file`为`.debug_line`文件名表分配文件名,语法是:  
+`.file` *fileno* *filename*
+*fileno*操作数必须是唯一的正数,来多为表的入口索引.*filename*是一个C字符串字面量.filename索引对使用者是可见的,因为filename table是与DWRF2调试信息中的,因此使用者必须直到表入口的索引`.debug_info`section一起共享的
+## .fill *repeat* , *size* ,*value*
+三个参数都是非表达式,这条指令会重复生成size bytes的复制,repeat可以是0或着更多,size也是大于等于0,但如果超过了8,他的值就会被看作8,与别人的assembler兼容,每个从负的byte都取自一个8byte的数,高的4为是0,低四位是以as运行机器上整数顺序编排的value,同样,这个怪异的特性与其他人的assembler是兼容的???  
+size和value是可选的,如果缺省第二个逗号,value就被当作是0,如果从第一逗号开始省略,size被看作是1.
+## .float *flonums*
+这个指令装配一个或多个逗号分隔的浮点数.与`.single`作用相同,具体生成的浮点数类型是as配置而定
+## .func name[,label]
+`.func`生成denote函数名的调试信息,并且如果文件编译时为开启调试这个会被忽略.当前只支持`--gstabs[+]`*label*是函数的入口,并且如果缺省的话会使用预定义的`leading char`,`leading char`通常是\_(blank?)或者nothing,视target而定,All functions are currently defined to have void return type. The function must be terminated with .endfunc.
+## .global *symbol* , .globl *symbol*
+`.global`使得*symbol*对ld可见,如果你在某个程序文件中定义了*symbol*,这使得他的值将可以在其他与之相连的文件中可用,另一方面,*symbol*可以通过定义在同一程序的定以在不同文件中同名symbol来获得.
+Both spellings (‘.globl’ and ‘.global’) are accepted, for compatibility with other assemblers.   
+On the HPPA, .global is not always enough to make it accessible to other partial programs. You may need the HPPA-only .EXPORT directive as well. See HPPA Assembler Directives. 
+## .gnu_attribute *tag*,*value*
+为此文件recoard a GNU object attribute,见哪里哪里
+## .hidden *names*
+这是ELF的visibility伪指令之一,另外的两个是`.internal`和`.protected`  
+这个伪指令会覆盖named symbols原来的可见性(local,global,weak捆绑设定).在这个伪指令把可见性设置为`hidden`,这意味着它对其他component不可见,这样的symbol通常也被看作是protected.
+## .hword *expresstion*
+接收0到多个*expresstion*,并为每个接收的生成一个16位的值.这条伪指令是`.short`的同义词,是目标架构而定,同样也是`.word`的同义词.
+## .ident
+这个伪指令被一些assembler用来在目标文件中设tag.这个伪指令的行为视target不同而有所不同.在使用a.out目标文件格式时,as接受这个通常是为了与其他已有汇编器的源文件的兼容性,但不会为之生成任何东西,,在使用COFF的时候,comments生成在`.comment`或者`rdata`section里视target而定,在使用ELF的时候,comments生成在`.comment`section中
