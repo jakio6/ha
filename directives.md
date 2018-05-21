@@ -375,9 +375,79 @@ On the HPPA, .global is not always enough to make it accessible to other partial
 ## .gnu_attribute *tag*,*value*
 为此文件recoard a GNU object attribute,见哪里哪里
 ## .hidden *names*
-这是ELF的visibility伪指令之一,另外的两个是`.internal`和`.protected`  
+这是ELF的visibility伪指令之一,另外的两个 是`.internal`和`.protected`  
 这个伪指令会覆盖named symbols原来的可见性(local,global,weak捆绑设定).在这个伪指令把可见性设置为`hidden`,这意味着它对其他component不可见,这样的symbol通常也被看作是protected.
 ## .hword *expresstion*
 接收0到多个*expresstion*,并为每个接收的生成一个16位的值.这条伪指令是`.short`的同义词,是目标架构而定,同样也是`.word`的同义词.
 ## .ident
 这个伪指令被一些assembler用来在目标文件中设tag.这个伪指令的行为视target不同而有所不同.在使用a.out目标文件格式时,as接受这个通常是为了与其他已有汇编器的源文件的兼容性,但不会为之生成任何东西,,在使用COFF的时候,comments生成在`.comment`或者`rdata`section里视target而定,在使用ELF的时候,comments生成在`.comment`section中
+## .if *absolute expresstion*
+`.if`标记了一段代码的开始,这段代码只在参数*absolute expresstion*(非负)非0时才编译,这个段的结尾必须有`.endif`注明.,你也可以选择在其他条件下编译另一段代码,由`.else`标注.如果你有好几个条件要校对,`.elseif`可以用来防止嵌套的if/else出现在`.else`块中.  
+还下面这几种`.if`的变体:
+>讲真接下这些if的后缀有些似曾相识的感觉
+
+
+### .ifdef *symbol*
+如果定义了指定的*symbol*,编译接下来的代码段,注意被引用但是并未显示定义的认为是未定义的.
+### .if *text*
+如果操作数是空(blank)的,编译接下来的代码段.
+### .ifc *string1*,*string2*
+如果两个串相同,编译接下来的代码.字符串可以用单引号括起来,如果字符串未带括号,第一个字符串到逗号截至,第二个字符串到行末结束.带空白字符的字符串因该用引号括起来.
+### .ifeq *absolute expresstion*
+参数为0就编译(不多写了)
+### .ifeqs *string1*,*string2*
+`.ifc`的临=另一种形式,字符串必须用双引号.
+### .ifxx *absolute expresstion*
+ge|大于等于0
+-|
+gt|大于0
+le|小于等于
+lt|小于
+ne|不等于0(与if差不多)
+
+### .ifnb *text*
+与`.ifb`相似,条件相反,如果非空则编译
+### .ifnc *string1*,*string2*
+与`.ifc`相似,条件相反,两个字符串不相等的时候编译
+### .ifndef *symbol*
+### .ifnotdef *symbol*
+如果*symbol*未定义则执行,上述两种形式是相等的,只引用未显示定义的看作为定义的
+### .ifnes *string1*,*string2*
+与`.ifeqs`相似,条件相反,如果两个字符串不相等时时编译.
+## .incbin "*file*"[,*skip*[,count]]
+`.incbin`伪指令将文件的字面量全部加到当前位置,你可也通过`-I`命令行选项控制搜索路径,_file_旁的引号是必需的.  
+*skip*参数指定跳过文件开头的一定数目的字节(*skip*个?),_count_指定的读取字节的最大数,注意这些数据并未有任何对齐,所以有必要采取措施来保证在`.incbin`前后给出了合适的对齐方式.
+## .include "_file_"
+这条伪指令提供了在源代码中指定位置包含支持文件的方法.来自_file_中的代码会参与编译,就好像他们就是紧跟在`.include`之后一样.当到达包含文件末尾的时候,原来的编译会继续进行,可以通过命令行选项控制文件搜索路径,_file_ __旁的括号是必需的__
+## .int expresstions
+接收来自任何section的0到多个expresstion,逗号分隔.对于每个expresstion,生成其运行时当前值,字节顺序视目标target而定
+## .internal *names*
+这是ELF可见性控制伪指令之一,另外两个是`.hidden`和`.protected`,
+This directive overrides the named symbols default visibility (which is set by their binding: local, global or weak). The directive sets the visibility to internal which means that the symbols are considered to be hidden (i.e., not visible to other components), and that some extra, processor specific processing must also be performed upon the symbols as well.(见`.hidden`)
+## .irp *symbol*,*values*...
+由`.endr`终结,将每个value带入*symbol*进行一次编译,如果没有给出value,将*symbol*当成是空串,编译一次,在statements序列中引用*symbol*,使用`\symbol`  
+For example, assembling
+
+        .irp    param,1,2,3
+        move    d\param,sp@-
+        .endr
+
+is equivalent to assembling
+
+        move    d1,sp@-
+        move    d2,sp@-
+        move    d3,sp@-
+For some caveats with the spelling of symbol, see also Macro.
+## .irpc *symbol*,*values*...
+逐字符代入,具体见下,自行与上头的比较  
+For example, assembling
+
+        .irpc    param,123
+        move    d\param,sp@-
+        .endr
+
+is equivalent to assembling
+
+        move    d1,sp@-
+        move    d2,sp@-
+        move    d3,sp@-
