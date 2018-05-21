@@ -498,4 +498,102 @@ This option causes a row to be added to .debug_line in reference to the current 
 (我觉得这是我永不上的)
 ## .loc_mark_labels enable
 When emitting DWARF2 line number information, the .loc_mark_labels directive makes the assembler emit an entry to the .debug_line line number matrix with the basic_block register in the state machine set whenever a code label is seen. The enable argument should be either 1 or 0, to enable or disable this function respectively.
-## .local
+## .local *names*
+这个ELF格式可用的伪指令,标记每个逗号分隔的*names*中的symbol作为一个本地symbol,使其对外不可见,如果某个symbol还不存在,则会创建它,那些`.lcomm`不接收对齐参数的目标文件多是ELF,`.local`可以用来和`.comm`一起定义对齐的本地普通数据.
+## .long *expresstion* 
+`.long`与`.int`相同.
+## .marco
+命令`.marco`和`.endm`允许你定义可以产生汇编输出的marco.例如,这个定义指定了可以将一个数字序列写入内存的marco`sum`:
+```
+        .macro  sum from=0, to=5
+        .long   \from
+        .if     \to-\from
+        sum     "(\from+1)",\to
+        .endif
+        .endm
+```
+ 这个定义之后,`SUM 0,5`,就等价与以下的汇编输出:
+```
+        .long   0
+        .long   1
+        .long   2
+        .long   3
+        .long   4
+        .long   5
+```
+### .marco *macname*
+### .marco *macname* *macargs* ...
+开始marco *macname*的定义.如果你的marco需要参数,在marco name之后指定他们的名字,参数之间由逗号或空格分隔.
+可以通过修饰marco的参数来指示是否所有的调用都必须指定一个非空值(通过`:req`),或者是否需要所有剩余的参数(通过`:vararg`),通过在参数名后面加`=deflt`可以为参数指定默认值,不能定义两个同名marco,除非在两次定义之间它已经受到了`.purgem`伪指令作用(解除宏定义).
+for example,下面都是合法的`.marco` statement:
+
+### `.marco comm`
+开始名为comm的marco的定义,这个marco补需要参数.
+### `.marco plus1 p, p1`
+### `.marco plus1 p p1`
+两个语句都开始名为plus1的marco的定义,需要两个参数,在marco定义内,通过`\p` 或`\p1`来取得参数的值.
+### `.marco reserve_str p1=0 p2`
+开始名为reserve_str的marco的定义,带两个参数,第一个参数有默认值,但第二个没有,在定义完成之后,你可以通过`reserve_str a,b`**(`\p1`取`a`的值)**或者`reserve_str ,b`(`\p1`取默认值,在本例中为0)来调用此marco.
+### `.marco m p1:req, p2=0, p3:vararg`
+开始名为`m`的marco的定义,需要至少三个参数,第一个参数的值必须指定,而第二个不必,第三个formal会被分配所有在调用(**invocation**)时指定的其他参数.  
+在调用marco的时候可以通过位置或关键字指定参数,比如,`sum 9,17`与`sum to=17,from=9`是等价的.
+
+(接下来将的大概是将\ 调用的参数与另外一些可以作为标符一部分的一些符号用在一起可能出现的一些错误及解决办法,差不多嘛,看一下就可以了)
+Note that since each of the macargs can be an identifier exactly as any other one permitted by the target architecture, there may be occasional problems if the target hand-crafts special meanings to certain characters when they occur in a special position. For example, if the colon (:) is generally permitted to be part of a symbol name, but the architecture specific code special-cases it when occurring as the final character of a symbol (to denote a label), then the macro parameter replacement code will have no way of knowing that and consider the whole construct (including the colon) an identifier, and check only this identifier for being the subject to parameter substitution. So for example this macro definition:
+
+	.macro label l
+\l:
+	.endm
+
+might not work as expected. Invoking ‘label foo’ might not create a label called ‘foo’ but instead just insert the text ‘\l:’ into the assembler source, probably generating an error about an unrecognised identifier.
+
+Similarly problems might occur with the period character (‘.’) which is often allowed inside opcode names (and hence identifier names). So for example constructing a macro to build an opcode from a base name and a length specifier like this:
+
+	.macro opcode base length
+        \base.\length
+	.endm
+
+and invoking it as ‘opcode store l’ will not create a ‘store.l’ instruction but instead generate some kind of error as the assembler tries to interpret the text ‘\base.\length’.
+
+There are several possible ways around this problem:
+
+Insert white space
+
+If it is possible to use white space characters then this is the simplest solution. eg:
+
+    	.macro label l
+    \l :
+    	.endm
+
+Use ‘\()’
+
+The string ‘\()’ can be used to separate the end of a macro argument from the following text. eg:
+
+    	.macro opcode base length
+            \base\().\length
+    	.endm
+
+Use the alternate macro syntax mode
+
+In the alternative macro syntax mode the ampersand character (‘&’) can be used as a separator. eg:
+
+    	.altmacro
+    	.macro label l
+    l&:
+    	.endm
+
+Note: this problem of correctly identifying string parameters to pseudo ops also applies to the identifiers used in .irp (see Irp) and .irpc (see Irpc) as well.
+### .endm
+标记一个marco定义的结尾.
+### .exitm
+提前退出marco定义
+### \@
+as maintains 一个统计已近执行了多少marco的计数器in this伪(pseudo)变量,可以通过`\@`将那个值copy到输出,只在marco定义内有效.
+### LOCAL *name* [ ,...]
+Warning: LOCAL is only available if you select “alternate macro syntax” with ‘--alternate’ or .altmacro. See .altmacro. 
+## .mri *val*
+如果*val*是非0的,这条伪指令会使as进入MRI模式,如果*val*是0,则会使as退出MRI模式,这个指令会影响直到下一个`.mri`指令的代码,或者到文件结束,
+## .noaltmarco
+关闭alternate marco模式.
+## .nolist
+控制assembly listings是否生成,这两个指令maintain 一个内部的计数器(初值是0)`.list`加它,`.nolist`减它,在这个计数器大于0的时候就会进行assembly listing的生成.
