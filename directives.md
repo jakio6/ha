@@ -451,3 +451,51 @@ is equivalent to assembling
         move    d1,sp@-
         move    d2,sp@-
         move    d3,sp@-
+## .lcomm *symbol* , *length*
+Reserve length (an absolute expression) bytes for a local common denoted by symbol. The section and value of symbol are those of the new local common. The addresses are allocated in the bss section, so that at run-time the bytes start off zeroed(.lcomm定义的变量在bss段中,初值是0). Symbol is not declared global (see .global), so is normally not visible to ld.   (还是不翻译的好)
+Some targets permit a third argument to be used with .lcomm. This argument specifies the desired alignment of the symbol in the bss section.  
+The syntax for .lcomm differs slightly on the HPPA. The syntax is ‘symbol .lcomm, length’; symbol is optional. 
+## .lflags
+为了与其他assembler兼容,as接受这个参数,但是会忽略它(就是不改也不报错)
+## .line *line-number*
+改变逻辑行号,*line-number*必须是非负数,下一行的行号就是那个逻辑行号,因此当前的其他语句都是在逻辑行1,(啥意思啊),One day as will no longer support this directive: it is recognized only for compatibility with existing assembler programs.(看到这个我就明白该怎么做了)  
+尽管这个伪指令是与a.out,b.out目标文件格式有关的,as在生成COFF文件是依旧会识别这个指令,并把它当成COFF中的`.ln`,如果他在`.def` `.endef`之外.  
+而在`.def`之中`.line`是编译器用来为调试生成额外的符号信息的.
+## .linkonce [type]
+标记当前的section,使得ld在链接时只会include一次(条好像有点用).这个可以用来在不同目标文件中包含相同的section,但可以保证在最后的输出文件中只包含一次.每次这个section出现的时候都要使用这条伪指令,重复的section是根据名字检测的,所以它必须是独特的????*type*参数是可选的,如果指定,他必须是一下字符串中的一个,比如:  
+### .linkonce same_size
+不是所有类型都一定在所有目标文件输出格式中被支持.
+### discard
+默默的扔掉重复的section,缺省值.
+### one_only
+如果有重复的section,就警告,但依旧值保留一个copy.
+### same_size
+如果任何重复section大小不一致就警告.
+### same_contents
+如果任何重复section中内容不一致就警告.
+## .list
+控制(与`.nolist`一起)是否生成assembly listings, 这两个伪指令maintain一个内部计数器(初始值为0),`.list`会增加它而`.nolist`会减少它,只要其大于0的时候就会生成assembly listing.
+listings通常是关闭的,当你打开时(使用-a命令行选项),listing counter的初始值是1.
+## .ln *line-number*
+`.ln`是`.line`的同义词
+## .loc *fileno* *lineno* [column] [options]
+在生成DWARF2行号信息时,`.loc`伪指令会在与紧跟的灰汇编指令有关的`.debug_line`行号矩阵后加上一row,*fileno* *lineno*和可选的*column*参数会在row被添加之前应用到`.debug_line`状态机中.  
+*option*是任意顺序下列符号组成的序列:
+### basic_block
+This option will **set** the **basic_block register** in the .debug_line state machine to **true**.
+### prologue_end
+This option will **set** the **prologue_end register** in the .debug_line state machine to **true**.
+### epilogue_begin
+his option will **set** the **epilogue_begin register** in the .debug_line state machine to **true**. 
+### is_stmt *value*
+This option will **set** the **is_stmt register** in the .debug_line state machine to **value**, **which must be either 0 or 1**.
+### isa *value*
+This directive will **set** the **isa register** in the .debug_line state machine to **value**, **which must be an unsigned integer**.
+### descriminator *value*
+This directive will **set** the **discriminator register** in the .debug_line state machine to **value**, **which must be an unsigned integer**.
+### view *value*
+This option causes a row to be added to .debug_line in reference to the current address (which might not be the same as that of the following assembly instruction), and to associate value with the view register in the .debug_line state machine. If value is a label, both the view register and the label are set to the number of prior .loc directives at the same program location. If value is the literal 0, the view register is set to zero, and the assembler asserts that there aren’t any prior .loc directives at the same program location. If value is the literal -0, the assembler arrange for the view register to be reset in this row, even if there are prior .loc directives at the same program location. 
+(我觉得这是我永不上的)
+## .loc_mark_labels enable
+When emitting DWARF2 line number information, the .loc_mark_labels directive makes the assembler emit an entry to the .debug_line line number matrix with the basic_block register in the state machine set whenever a code label is seen. The enable argument should be either 1 or 0, to enable or disable this function respectively.
+## .local
