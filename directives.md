@@ -597,3 +597,212 @@ Warning: LOCAL is only available if you select “alternate macro syntax” with
 关闭alternate marco模式.
 ## .nolist
 控制assembly listings是否生成,这两个指令maintain 一个内部的计数器(初值是0)`.list`加它,`.nolist`减它,在这个计数器大于0的时候就会进行assembly listing的生成.
+## .octa *bignums*
+这个伪指令接收0到多个逗号分隔的参数,对每个bignum,生成一个16byte的整数.  
+术语*octa*来源与,一个word是2byte,因此一个octa-word就是16byte.
+## .offset *loc* 
+在absolute section中将位置寄存器设置为*loc*,*loc*必须是非负表达式,这个伪指令在用绝对值定义symbol的时候很有用,别吧这个伪指令与`.org`混淆了???
+## .org *new-lc* ,*fill*
+将当前section的location counter前移到*new-lc*,*new-lc*可以是非负表达式或者an expression with the same section as the current subsection.这意味着,不能用`.org`来cross section:如果*new-lc*值有误,这条指令会被忽略.为了与先前的assembler兼容,如果*new-lc*(指明?)的section 是absolute的,as会哇让您提示,然后会假设,*new-lc*的section与当前subsection是相同的.  
+.org指令只能增加位置寄存器,或者不动它,不能使用`.org`指令后移位置寄存器.因为as要尽可能一遍就编译玩程序,*new-lc*不能是未定义的,如果你真的非常讨厌这个设定的话我们非常希望能使用您改进过的assembler.  
+注意相关性是与当前section有关的,不是当前subsection.这与其他人的汇编程序兼容(老谈这东西什么意思)  
+当当前subsection的位置寄存器被advance了,其经过的中间byte会用*fill*(非负)填充,缺省值是0.
+## .p2algin[wl] *abs-expr*,*abs-expr*,*abs-expr*
+填充当前subsection的位置寄存器到一个特定的内存边界,第一个表达式是前移后位置寄存器低位0要有的个数,(3表示8对齐)  
+第二个表达式给出填充字节中的填充值(可以省略,缺省值通常是0,如果这个section被注明为包含code,会被填充no-op 指令.  
+第三个表达式同样是非负的,可选的,如果给出,它指明这个对齐指令所能跨过byte的最大值,如果进行这个对齐需要跨过超过这个指定最大值的byte,这条指令则不会执行,You can omit the fill value (the second argument) entirely by simply using two commas after the required alignment; this can be useful if you want the alignment to be filled with no-op instructions when appropriate.   
+`.p2alignw`与`.p2alignl`是`.p2align`的变体,`.p2alignw`把填充模型看作两字节的值,`p2alignw 2,0x368d`会按4对齐,如果跨过了两个字节,会将其填充上0x368d(实际填充顺序视处理器的端序而定),如果跨过1或3个byte,the fill value is undefined. 
+## .popsection
+这是ELF佛如section stack操作伪指令之一,另外的是**`.section`**,`.subsection`,`.pushsection`和`.previous`.  
+这条指令将使用section stack顶端的section(and subsection)替换当前的section(and subsection),this section is popped off the stack(就是pop嘛)
+## .previous
+This is one of the ELF section stack manipulation directives. The others are .section (see Section), .subsection (see SubSection), .pushsection (see PushSection), and .popsection (see PopSection).   
+这条指令将当前section(and subsection)与其前最近引用过的一个section/subsection pair交换 Multiple .previous directives in a row will flip between two sections (and their subsections). For example:   
+```
+.section A
+ .subsection 1
+  .word 0x1234
+ .subsection 2
+  .word 0x5678
+.previous
+ .word 0x9abc
+ ```
+Will place 0x1234 and 0x9abc into subsection 1 and 0x5678 into subsection 2 of section A. Whilst(同时):
+```
+.section A
+.subsection 1
+  # Now in section A subsection 1
+  .word 0x1234
+.section B
+.subsection 0
+  # Now in section B subsection 0
+  .word 0x5678
+.subsection 1
+  # Now in section B subsection 1
+  .word 0x9abc
+.previous
+  # Now in section B subsection 0
+  .word 0xdef0
+  ```
+  Will place 0x1234 into section A, 0x5678 and 0xdef0 into subsection 0 of section B and 0x9abc into subsection 1 of section B.(可能得先看subsection)
+ ## .print *string* 
+ as会在编译的时候输出*string*到标准输出,string要带双引号.
+ ## .protected *names*
+ This is one of the ELF visibility directives. The other two are .hidden (see Hidden) and .internal (see Internal). (到齐了)  
+ 改变指定named symbol默认的可见性(local,global,weak一起改).The directive sets the visibility to protected which means that在定义了这个symbol的component中对这个symbol的引用一定会是这个component中此symbol的定义,即使在其他component中的定义通常会抢占(preempt).
+ ## .psize *lines* ,*columns*
+ 使用这个伪指令来声明行号,可选的列数用来use for each page, when generating listings.   
+ 不用`.psize`指令,listing的默认line-count是60,可以缺省逗号和*columns*,默认的宽度是200列.
+ 在行号越界的时候as会生成formfeeds(换页符,page break分页符)(或者在你使用`.eject`明确指定需要一个的时候)  
+ If you specify lines as 0, no formfeeds are generated save those explicitly specified with .eject.
+ ## .purgem *name*
+ 取消marco名定义.
+ ## .pushsection *name* [,subsection] [ ,"flags"[,@type [,arguements]]]
+ This is one of the ELF section stack manipulation directives. The others are .section (see Section), .subsection (see SubSection), .popsection (see PopSection), and .previous (see Previous). (还差个subsection,哎呀好像还差section)  
+将当前section(and subsection)压入section stack顶部,然后用*name*与*subseection*替换当前section和subsection.可选的啥啥啥和section中的一样.
+## .quad *bignums*
+.quad expects zero or more bignums, separated by commas. For each bignum, it emits an 8-byte integer. If the bignum won’t fit in 8 bytes, it prints a warning message; and just takes the lowest order 8 bytes of the bignum.
+
+The term “quad” comes from contexts in which a “word” is two bytes; hence quad-word for 8 bytes. (四个word的大数)
+## reloc *offset*,*reloc_name*[,*expresstion*]
+Generate a relocation at offset of type reloc_name with value expression. If offset is a number, the relocation is generated in the current section. If offset is an expression that resolves to a symbol plus offset, the relocation is generated in the given symbol’s section. expression, if present, must resolve to a symbol plus addend or to an absolute value, but note that not all targets support an addend. e.g. ELF REL targets such as i386 store an addend in the section contents rather than in the relocation. This low level interface does not support addends stored in the section. 
+## .rept *count*
+重复接下来与`.endr`之间的行序列*count*次
+比如,编译
+
+        .rept   3
+        .long   0
+        .endr
+与编译
+
+        .long   0
+        .long   0
+        .long   0
+是等价的        
+*count*允许是0,但什么都不会生成,不允许是负数,如果碰到了,会被当作是0.
+## .subttl "*subheading*"
+生成assembly listings时使用*subheading*作为title(third line,immediately after the title line??)  
+这个伪指令会影响接下来的paegs,如果出现在当前pege的前十行的话也会影响当前page.
+## .scl *class*
+设定一个symbol的storage-class值,这个指令不能用与`.def`对中,storage-class标志着一个symbol是static还是external或是包含记录的更多的调试标识信息.
+## .section *name*
+使用`.section`伪指令来指示将接下来的代码装进名为*name*的section.  
+这个指令值在实际支持任意命名section的target上生效,在a.out母校文件爱呢模式下,他不被接受?????(不是一直在用吗.....),即使是使用标准的a.out section名.
+### COFF Version
+对于COFF目标文件,`.section`伪指令使用方式有以下几种:  
+#### `.section name[, "flags"]`
+#### `.section name[,subsection]`
+如果可选参数带括号,他被看作是用于此section的flags,每个flag都是一个单字符,允许接下来的这些flags:
+
+b|bss section(未初始化的数据)
+-|
+n|section is not loaded
+w|wirtable section
+d|data section
+e|exclude section from linking
+r|read-only section
+x|executable section
+s|shared section (对PE文件有意义)
+a|ignored (为了与ELF版本的兼容性)
+y|section is not readable(meaningful for PE targets)
+0-9|single-digit power-of-two section alignment (GNU extension)
+
+如果没有指定flags,默认的flags是section名字而定.如果section名字不能识别,the default will be for the section to be loaded and writable. 注意n与w标识会从这个section移除属性,而不是增加他们,so if they are used on their own it will be as if no flags had been specified at all.   
+可选参数没带括号时被看作是subsection number.
+### ELF Version
+This is one of the ELF section stack manipulation directives. The others are .subsection (see SubSection), .pushsection (see PushSection), .popsection (see PopSection), and .previous (see Previous).   
+对与ELF目标文件格式,`.section`伪指令的格式是这样使用的:  
+#### `.section name [,"flags"[,@type[,flag_specific_arguments]]]`
+如果给定了`--section-subset`命令行选项,*name*参数中可以包含替代序列,当前只支持**%S**,and substitutes the current section name.比如:
+```
+.macro exception_code
+.section %S.exception
+[exception code here]
+.previous
+.endm
+
+.text
+[code]
+exception_code
+[...]
+
+.section .init
+[init code]
+exception_code
+[...]
+```
+这两个`exception_code`的调用分别会创建`.text.execption`section和`.init.section`section.This is useful e.g. to discriminate between ancillary sections that are tied to setup code to be discarded after use from ancillary sections that need to stay resident without having to define multiple exception_code macros just for that purpose.(自己看)  
+可选的*flags*参数是由任意以下字符组成的带括号的字符串:  
+a
+
+    section is allocatable 
+d
+
+    section is a GNU_MBIND section 
+e
+
+    section is excluded from executable and shared library. 
+w
+
+    section is writable 
+x
+
+    section is executable 
+M
+
+    section is mergeable 
+S
+
+    section contains zero terminated strings 
+G
+
+    section is a member of a section group 
+T
+
+    section is used for thread-local-storage 
+?
+
+	section is a member of the previously-current section’s group, if any 
+    
+    
+< number>
+
+	a numeric value indicating the bits to be set in the ELF section header’s flags field. Note - if one or more of the alphabetic characters described above is also included in the flags field, their bit values will be ORed into the resulting value. 
+< target specific>
+
+    some targets extend this list with their own flag characters 
+
+注意,一旦一个section的flags被设置后就不能再修改.然而也有一些例外.处理器和应用特定的flags可以加到已定义的section中去.`.interp`,`.strtab`和`.symtab`section可以在flags设置后重新设置flag(a)(一个?特定的),`.note-GNU-stack`section可以增加可执行(x)flag.
+
+可选的*type*参数可以包含一下常量中的一个:
+
+@progbits
+
+    section contains data 
+@nobits
+
+    section does not contain data (i.e., section only occupies space) 
+@note
+
+    section contains data which is used by things other than the program 
+@init_array
+
+    section contains an array of pointers to init functions 
+@fini_array
+
+    section contains an array of pointers to finish functions 
+@preinit_array
+
+    section contains an array of pointers to pre-init functions 
+@< number>
+
+    a numeric value to be set as the ELF section header’s type field. 
+@< target specific>(比如@function?)
+
+    some targets extend this list with their own types 
+
+
+许多targets只支持最前面的三个section类型.如果需要的话type可以带双引号.
+
+在一些用**`@`**字符作为注释开始符号的target(比如 ARM)上,会使用另一个替代符号,比如ARM ports使用**`%`**符号.
+有些特殊section,比如`.text`和`.data`已近有填充的类型了,如果试图取修改的话assembler会报错.
