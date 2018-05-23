@@ -805,4 +805,131 @@ T
 许多targets只支持最前面的三个section类型.如果需要的话type可以带双引号.
 
 在一些用**`@`**字符作为注释开始符号的target(比如 ARM)上,会使用另一个替代符号,比如ARM ports使用**`%`**符号.
-有些特殊section,比如`.text`和`.data`已近有填充的类型了,如果试图取修改的话assembler会报错.
+有些特殊section,比如`.text`和`.data`已近有填充的类型了,如果试图取修改的话assembler会报错.  
+如果flags里含有M,*type*就必须作为连带一个额外的参数一起指定,像这样:
+	
+    .section name , "flags"M, @type,entsize
+带M flag但不带S flag的section必须包含固定大小的常量,每个entsize八字节(octets)长. (each entsize octets long.)好像错了.  
+带M和S flag的必须包含终结字符串,每个字符长*entsize*字节.  
+链接器会移除section中名称相同,实体大小相同,标识相同的重叠部分,*entsize*必须是非负的,对每个同时带MS的section,a string which is a suffix of a larger string is considered a duplicate. Thus "def" will be merged with "abcdef"; A reference to the first "def" will be changed to a reference to "abcdef"+3. 
+
+如果*flags*里带了G,那么*同type*参数就必须与另一个额外的field一起给出,像这样:
+
+	.section name , "flags"G, @type ,GroupName[,linkage]
+GroupName field指定了这个section所属的section group的名字,可选的linkage field可以包含:
+#### comdat
+表明这个section有一个???
+#### .gnu.linkence
+comdat的别名,,,差不多直到什么意思了.
+
+注意,如果同时有`M` `G`,Merge flag的附属参数因该先出现,像这样:
+
+	.section name ,"flags"MG,@type,entsize,GroupName[,linkage]
+如果flags里有`?`,则不能带`G`.`?`表明要考虑当前在这个伪指令之前的section,如果那个section带了`G`,那么这个新的section会使用G和相应的相同的参数,,如果没带,那么之歌`?`没有作用.
+
+如果没有指定flag,默认的flag视section的名字而定,如果给出的section名不被识别,默认不会设置任何flag:他不会被分配内存,不可写,不可执行.这个section会包含数据.
+
+对于ELF目标,为了与Solaris 汇编器兼容,本汇编支持另一种形式的`.section`伪指令:
+#### .section "name"[,flags...]
+注意section名是带引号的,可以带逗号分隔的flag序列:
+
+#alloc
+
+    section is allocatable 
+#write
+
+    section is writable 
+#execinstr
+
+    section is executable 
+#exclude
+
+    section is excluded from executable and shared library. 
+#tls
+
+    section is used for thread local storage 
+This directive replaces the current section and subsection. See the contents of the gas testsuite directory gas/testsuite/gas/elf for some examples of how this directive and the other section stack directives work. 
+## .set *symbol , expresstion*
+将*symbol*的值设置为*expresstion*,这会改变symbol的值和value来顺从*expresstion*,如果*symbol*被标记为external,那么它仍然是标记的.  
+
+可以多次`.set`一个symbol,只要给symbol的都是常量,基于带其他symbol的expresstion的值也是允许的,但有些目标形式可能会限制没次汇编只能进行一次,这是因为这些target在assembly的时候并不设置symbol的address,而是直到最后链接的时候才进行,his allows the linker a chance to change the code in the files, changing the location of, and the relative distance between, various different symbols. 
+
+如果你`.set`了一个 global symbol,最终在目标文件中他的值是最后存进它的(这不是肯定的吗...)  
+在 Z80上 `set`是一个真正的指令,使用`symbol defl expresstion`来替代.
+## .short *expresstion*
+`.short`通常与`.word`是一样的(在有些机器上长度是不一的)
+## .single *flonums*
+这个伪指令分配0到多个由逗号分隔的浮点数,与`.float`效果一样,具体生成视as配置而定.
+## .size
+这个伪指令用来与symbol有关的大小
+### COFF Version
+对于 COFF target,`.size`伪指令只允许出现在`.def`对之中,像这样使用:
+
+	.size expresstion
+### ELF Version
+对于ELF target,`.size`伪指令这样使用:
+
+	.size name ,expresstion
+这条伪指令设置与symbol name有关的size,这个size的byte由*expresstion*得出,可以利用label进行算数运算,这个伪指令通常是用来设置函数symbol的size.
+## .skip *size* ,*fill*
+这条伪指令会生成*size*个byte,每个值都为*fill*,*size*和*fill*都是非负数,如果逗号和*fill*缺省,默认填充值为0,这与`.space`相同.
+## .sleb128 expressions
+sleb128 stands for “signed little endian base 128.” This is a compact, variable length representation of numbers used by the DWARF symbolic debugging format. See .uleb128. 
+## .space *size* ,*fill*
+描述与`.skip`相同.Warning: .space has a completely different meaning for HPPA targets; use .block as a substitute. See HP9000 Series 800 Assembly Language Reference Manual (HP 92432-90001) for the meaning of the .space directive. See HPPA Assembler Directives, for a summary.
+## .stabd, .stabn, .stabs
+There are three directives that begin ‘.stab’. All emit symbols (see Symbols), for use by symbolic debuggers. The symbols are not entered in the as hash table: they cannot be referenced elsewhere in the source file. Up to five fields are required:
+
+string
+
+    This is the symbol’s name. It may contain any character except ‘\000’, so is more general than ordinary symbol names. Some debuggers used to code arbitrarily complex structures into symbol names using this field.
+type
+
+    An absolute expression. The symbol’s type is set to the low 8 bits of this expression. Any bit pattern is permitted, but ld and debuggers choke on silly bit patterns.
+other
+
+    An absolute expression. The symbol’s “other” attribute is set to the low 8 bits of this expression.
+desc
+
+    An absolute expression. The symbol’s descriptor is set to the low 16 bits of this expression.
+value
+
+    An absolute expression which becomes the symbol’s value. 
+
+If a warning is detected while reading a .stabd, .stabn, or .stabs statement, the symbol has probably already been created; you get a half-formed symbol in your object file. This is compatible with earlier assemblers!
+
+.stabd type , other , desc
+
+    The “name” of the symbol generated is not even an empty string. It is a null pointer, for compatibility. Older assemblers used a null pointer so they didn’t waste space in object files with empty strings.
+
+    The symbol’s value is set to the location counter, relocatably. When your program is linked, the value of this symbol is the address of the location counter when the .stabd was assembled.
+.stabn type , other , desc , value
+
+    The name of the symbol is set to the empty string "".
+.stabs string , type , other , desc , value
+
+    All five fields are specified. 
+照抄
+## .string "*str*",.string8 "*str8*",.string16 "*str*", .string32 "*str*", .string64 "*str*" 
+将*str*中的字符copy到目标文件中,你可以用逗号分隔来指定copy多个string,Unless otherwise specified for a particular machine,汇编器会用0byte作为string的结尾标识,你可以用strings中描述的任何逃脱序列.
+
+后面带16,32那些的会把每个8bit的字符加长到16,32个bit,拓展的字符以xxxxxxx顺序排列:
+example:
+
+	.string32 "BYE"
+expands to:
+
+	.string   "B\0\0\0Y\0\0\0E\0\0\0"  /* On little endian targets.  */
+	.string   "\0\0\0B\0\0\0Y\0\0\0E"  /* On big endian targets.  */
+## .struct *expresstion*
+切换到absolute section,并将section offset 设置为*expresstion*(非负数),像这样:
+       
+       .struct 0
+field1:
+
+        .struct field1 + 4
+field2:
+       
+       .struct field2 + 4
+field3:  
+这将会使symbol *field*值为0,*field2*值为4,*field3*值为8.汇编会保持在absolute section,进一步汇编之前你需要使用某种形式的`.section`伪指令变更到其他section.
