@@ -933,3 +933,139 @@ field2:
        .struct field2 + 4
 field3:  
 这将会使symbol *field*值为0,*field2*值为4,*field3*值为8.汇编会保持在absolute section,进一步汇编之前你需要使用某种形式的`.section`伪指令变更到其他section.
+## .subsection *name*
+ELF section stack操作伪指令之一, The others are .section (see Section), .pushsection (see PushSection), .popsection (see PopSection), and .previous (see Previous).   
+这条伪指令使用*name*替换当前当前的subsection,当前的section不会改变,被替换的subsection会被放到当时stack subsection的顶端.
+## .symver
+```
+Use the .symver directive to bind symbols to specific version nodes within a source file. This is only supported on ELF platforms, and is typically used when assembling files to be linked into a shared library. There are cases where it may make sense to use this in objects to be bound into an application itself so as to override a versioned symbol from a shared library.
+
+For ELF targets, the .symver directive can be used like this:
+
+.symver name, name2@nodename
+
+If the symbol name is defined within the file being assembled, the .symver directive effectively creates a symbol alias with the name name2@nodename, and in fact the main reason that we just don’t try and create a regular alias is that the @ character isn’t permitted in symbol names. The name2 part of the name is the actual name of the symbol by which it will be externally referenced. The name name itself is merely a name of convenience that is used so that it is possible to have definitions for multiple versions of a function within a single source file, and so that the compiler can unambiguously know which version of a function is being mentioned. The nodename portion of the alias should be the name of a node specified in the version script supplied to the linker when building a shared library. If you are attempting to override a versioned symbol from a shared library, then nodename should correspond to the nodename of the symbol you are trying to override.
+
+If the symbol name is not defined within the file being assembled, all references to name will be changed to name2@nodename. If no reference to name is made, name2@nodename will be removed from the symbol table.
+
+Another usage of the .symver directive is:
+
+.symver name, name2@@nodename
+
+In this case, the symbol name must exist and be defined within the file being assembled. It is similar to name2@nodename. The difference is name2@@nodename will also be used to resolve references to name2 by the linker.
+
+The third usage of the .symver directive is:
+
+.symver name, name2@@@nodename
+
+When name is not defined within the file being assembled, it is treated as name2@nodename. When name is defined within the file being assembled, the symbol name, name, will be changed to name2@@nodename. 
+```
+## .tag structname
+这个伪指令是编译器用来在symbol table中生成额外调试信息的,只允许出现在`.def`对中,Tags是用来symbol table中的structure 定义及其实例(instance)
+## .text *subsection*
+告诉as将接下来的语句汇编到编号为*subsection*(absolute)的text sibsection(了解下),如果 *subsection*缺省,默认值为0.
+## .title "*heading*"
+在生成assembly listings时使用*heading*作为title(第二行,紧跟在源文件名和pagenumber之后).
+如果这条伪指令出现在一个page的前十行的话,它还会影响后面的page.
+## .type
+这条伪指令用来设置一个symbol的type.  
+###COFF Version
+对COFF targets,这个伪指令只允许出现在`.def`对之中,用法像这样:
+#### .type *int*
+这会记录integer *int*作为一个符号表入口的类型属性.
+### ELF Version
+对于ELF targets,`.type`伪指令用法如下:
+#### .type *name* , *type decription*
+这回设置symbol *name*的类型为function symbol或者object symbol.*type description*字段支持五种不同的语法,为了与不同的assembler兼容.
+
+由于在这些语法中使用的有些字符(不如`@`和`#`)在某些架构上是注释符,下面的有些语法并不能在所有架构上都支持,The first variant will be accepted by the GNU assembler on all architectures so that variant should be used for maximum portability, if you do not need to assemble your code with other assemblers.
+
+The syntaxes supported are:
+```
+  .type <name> STT_<TYPE_IN_UPPER_CASE>
+  .type <name>,#<type>
+  .type <name>,@<type>
+  .type <name>,%<type>
+  .type <name>,"<type>"
+```
+The types supported are:
+
+#### STT_FUNC  
+#### function
+```
+    Mark the symbol as being a function name.
+```
+#### STT_GNU_IFUNC
+#### gnu_indirect_function
+
+    Mark the symbol as an indirect function when evaluated during reloc processing. (This is only supported on assemblers targeting GNU systems).
+#### STT_OBJECT
+#### object
+
+    Mark the symbol as being a data object.
+#### STT_TLS
+#### tls_object
+
+    Mark the symbol as being a thread-local data object.
+#### STT_COMMON
+#### common
+
+    Mark the symbol as being a common data object.
+#### STT_NOTYPE
+#### notype
+
+    Does not mark the symbol in any way. It is supported just for completeness.
+#### gnu_unique_object
+
+    Marks the symbol as being a globally unique data object. The dynamic linker will make sure that in the entire process there is just one symbol with this name and type in use. (This is only supported on assemblers targeting GNU systems).
+注意:有些targets支持一些额外的type来作为上面列出的这些的补充.
+## .uleb128 expressions
+uleb128 stands for “unsigned little endian base 128.” This is a compact, variable length representation of numbers used by the DWARF symbolic debugging format. See .sleb128. 
+## .val *addr*
+这条伪指令只允许出现在`.def`对中,将地址*addr*记录为一个符号表入口的value属性.
+## .version "*string*"
+This directive creates a .note section and places into it an ELF formatted note of type NT_VERSION. The note’s name is set to string. 
+## .vtable_entry *table, offset*
+这条伪指令会找到或者创建一个symbol *table*并以加数**offset**为其创建一个**VTABLE_ENTRY**重定位???
+## 	.vtable_inherit *child, parent*
+这个伪指令寻找符号*child*并找或者创建符号*parent*然后以child symbol的值作为加数为*parent*创建一个重定位.当parent的名字为0的时候,会被特殊处理为指代`*ABS*`section.
+## .warning "*string*"
+类似于指令`.error`,但是只产生一个warning.
+## .weak *names*
+这条伪指令为逗号分隔的符号names设置weak属性,如果这个symbol并不存在,则会被创建.  
+在COFF targets上,weak symbols是一个GNU拓展(extension)??,这条伪指令会....同上.  
+在PE targets上,在带支持weak symbol,作为weak 别称??,当一个weak symbol 创建时that is not an alias,GAS会生成一个替代符号来保存默认值.
+## .weakref *alias ,target*
+这条伪指令为*target*symbol创建一个别称以使得这个symbol可以weak-symbol语法引用,但并不会真的使得它变为weak.如果给出了这个symbol的直接寻址或者定义,这个符号不会是weak,但如果是所有对它的引用都是通过weak references,这个symbol在符号表中会被标记为weak.
+
+这个效果等同于将所有对这个别称的引用移到一个独立文件中,然后将这个别名重命名为它原来的名字,并在那里将他的类型设置为weak,然后对移除了alias的文件与新加文件进行reloadable的链接.
+
+alias本身丛始至终并不会进入符号表,只在assembler中处理.
+## .word *expresstion*
+这条伪指令接收来自任意section的由逗号分隔的0到多个expresstion.
+
+生成的number的size和byte order视target computer而定.
+>### warning:Special Treatmeent to support Compilers
+
+有32位地址空间,但寻址低于32位的机器,需要一下特殊处理,如果你感兴趣的机器是32位寻址的(or doesn’t require it; see Machine Dependencies),你可以忽略这个问题.  
+In order to assemble compiler output into something that works, as occasionally does strange things to ‘.word’ directives. Directives of the form ‘.word sym1-sym2’ are often emitted by compilers as part of jump tables. Therefore, when as assembles a directive of the form ‘.word sym1-sym2’, and the difference between sym1 and sym2 does not fit in 16 bits, as creates a secondary jump table, immediately before the next label. This secondary jump table is preceded by a short-jump to the first byte after the secondary table. This short-jump prevents the flow of control from accidentally falling into the new table. Inside the table is a long-jump to sym2. The original ‘.word’ contains sym1 minus the address of the long-jump to sym2.
+
+If there were several occurrences of ‘.word sym1-sym2’ before the secondary jump table, all of them are adjusted. If there was a ‘.word sym3-sym4’, that also did not fit in sixteen bits, a long-jump to sym4 is included in the secondary jump table, and the .word directives are adjusted to contain sym3 minus the address of the long-jump to sym4; and so on, for as many entries in the original jump table as necessary. 
+## .zero *size*
+This directive emits size 0-valued bytes.size必须是非负的,这条伪指令实际上是`.skip`的别称,所以它可以带一个可选的第二参数来作为填充值,但是那样用就有点误导人了.
+## .2byte *expresstion* [,*expresstion*]\*
+这条指令接收0到多个逗号分隔的参数,如果没有就什么都不干,否则就轮流计算每一个expresstion的值然后填充到当前output section的下两个byte,如果这个值表达要大与两个字节,就会警告,然后取低为的两个字节作为实际填充值,如果一个expresstion的值在assembly time不能确定,就会进行relocation在link时确定.  
+这条伪指令在填充值的前后都不会进行任何的对齐,as a result of this,如果进行了relocation,they may be different from those used for inserting values with a guaranteed alignment.This directive is only available for ELF targets.
+## .4byte* expression [, expression]*\*
+与`.2byte`指令类似,除了它在输出中插入unaligned,4byte的值.
+## .8byte *expression [, expression]*\*
+......不说了.
+## Deprecated Directives
+有一天这些指令将不再生效,包含他们只是为了与老板的编译器兼容.
+### .abort
+### .line
+
+
+
+___
+好了终于尼马抄完了,实在是不想抄了,到后面全是照cole,没办法,不这样做根本看不下去.....
