@@ -1,0 +1,5 @@
+let g:netrw_dirhistmax  =10
+let g:netrw_dirhist_cnt =3
+let g:netrw_dirhist_1='/home/jakio6/git/please-dont-g'
+let g:netrw_dirhist_2='/home/jakio6/.vim/script'
+let g:netrw_dirhist_3='/home/jakio6/.vim/bundle/Vundle.vim/syntax'
