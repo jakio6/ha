@@ -10,4 +10,7 @@
 	- 配置列表: `--list` (会有重复,应为是从多个配置文件读的)
 	- 检查某一项: 给出`key`不给值
 
-
+- 获取帮助: 
+	- `git help <verb>`
+	- `git <verb> --help`
+	- `man git-<verb>`
