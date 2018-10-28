@@ -86,6 +86,7 @@
 	- `--grep`匹配关键词
 	- 要同时应用多个匹配项需要使用`--all-match`
 	- `-S`匹配添加或者移除了某些字符串的提交
+
 撤销操作
 ---
 - 撤销操作: `git commit --amend`
@@ -101,6 +102,27 @@
 	- 就那个意思,你的改动会丢失
 	- 强调:已提交的东西几乎都可以恢复,但是没有提交过的没了就没了
 
-
-
-
+远程仓库的使用
+---
+- 查看远程仓库: `git remote`
+	- 列出你指定的每一个远程服务器的简写
+	- git给克隆的仓库服务器的默认名称是origin
+	- `-v`显示操作对应的URL
+- 添加远程仓库: `git remote add <shortname> <url>`
+	- 添加一个新的仓库并指定一个简写
+- 从远程仓库中抓取与拉取: 
+	- `git fetch [remote-name]` fetch你还没有的数据,需要手动合并
+	- `git pull` 自动合并的
+- 推送到远程仓库: `git push [remote-name] [branch-name]`
+	- 有写入权限并且期间没有别的推送ok
+	- 如果期间有别的推送就得先拉取合并之后才能推
+- 查看远程仓库: `git remote show [remote-name]`
+	- 像我这种几乎没什么好看的,,:
+	- push自动推送到哪个远程分支
+	- 哪些不在本地
+	- 哪些已经从远程服务器上移除
+	- 执行`pull`的时候哪些会自动合并xxxd
+- 远程仓库的移除和重命名: 
+	- `git remote rename`重命名,如:
+	- `git remote rename origin fuck`
+	- `git remote rm`删除
