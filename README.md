@@ -160,3 +160,16 @@
 	- 可以`git checkout -b [branchname] [tagname]`在特定标签上创建一个分支
 	- 这里学的是checkout啊啊啊啊啊
 	- 如果这个分支又提交了就又和那个标签有不同了
+
+GIT别名
+---
+- 抄一点有用的,听说能让我体会到git的小巧强大(用shell的别名也可以了,但是懒得弄,zsh给的实在太短了都分不清(主要是不熟悉git呢))
+- `git config --global alias.co checkout`
+- `git config --global alias.br branch`
+- `git config --global alias.ci commit`
+- `git config --global alias.st status`
+- `git config --global alias.unstage 'reset HEAD --'`
+- `git config --global alias.last 'log -1 HEAD'`
+- `git config --global alias.visual '!gitk'`执行外部命令(这个我没有)
+- 现在要学习就不用了
+
