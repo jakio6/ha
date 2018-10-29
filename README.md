@@ -1,3 +1,4 @@
+> ### 基础
 起步
 ---
 - 配置: `git config`
@@ -173,3 +174,4 @@ GIT别名
 - `git config --global alias.visual '!gitk'`执行外部命令(这个我没有)
 - 现在要学习就不用了
 
+----
